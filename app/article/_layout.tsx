@@ -2,13 +2,19 @@ import { Stack } from 'expo-router';
 
 export default function ArticleLayout() {
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerShown: true,
+        headerBackTitle: '',
+        headerTitle: '',
+        headerShadowVisible: false,
+        headerTransparent: false,
+      }}
+    >
       <Stack.Screen
         name="[slug]"
         options={{
-          title: '',
-          headerBackTitle: 'Back',
-          headerShadowVisible: false,
+          headerShown: true,
         }}
       />
     </Stack>

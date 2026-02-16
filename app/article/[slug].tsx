@@ -1,7 +1,9 @@
-import { useLocalSearchParams } from 'expo-router';
+import { Image } from 'expo-image';
+import { type Href, Link, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -12,7 +14,7 @@ import RenderHtml from 'react-native-render-html';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { fetchPostBySlug } from '@/lib/ghost-api';
+import { fetchPostBySlug, fetchPosts } from '@/lib/ghost-api';
 import type { GhostPost } from '@/types/ghost';
 
 export default function ArticleScreen() {
@@ -22,14 +24,23 @@ export default function ArticleScreen() {
   const [post, setPost] = useState<GhostPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recentPosts, setRecentPosts] = useState<GhostPost[]>([]);
 
   const load = useCallback(async () => {
     if (!slug) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchPostBySlug(slug);
-      setPost(data as GhostPost);
+      const [postData, recentData] = await Promise.all([
+        fetchPostBySlug(slug),
+        fetchPosts({ limit: 6 }),
+      ]);
+      setPost(postData as GhostPost);
+      // Filter out the current post and limit to 5
+      const filtered = (Array.isArray(recentData) ? recentData : [])
+        .filter((p) => p.slug !== slug)
+        .slice(0, 5);
+      setRecentPosts(filtered);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load article');
     } finally {
@@ -75,8 +86,22 @@ export default function ArticleScreen() {
       showsVerticalScrollIndicator={true}
     >
       <ThemedView style={styles.article}>
+        {post.feature_image && (
+          <Image
+            source={{ uri: post.feature_image }}
+            style={[styles.featuredImage, { width: width - 32 }]}
+            contentFit="cover"
+          />
+        )}
         <ThemedText type="title" style={styles.title}>
           {post.title}
+        </ThemedText>
+        <ThemedText style={styles.publishedDate}>
+          {new Date(post.published_at).toLocaleDateString('sq-AL', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}
         </ThemedText>
         <RenderHtml
           contentWidth={contentWidth}
@@ -89,6 +114,49 @@ export default function ArticleScreen() {
             img: { maxWidth: '100%', height: undefined },
           }}
         />
+
+        {recentPosts.length > 0 && (
+          <ThemedView style={styles.readMoreSection}>
+            <ThemedText type="subtitle" style={styles.readMoreTitle}>
+              Lexo më shumë
+            </ThemedText>
+            {recentPosts.map((recentPost) => (
+              <Link
+                key={recentPost.id}
+                href={(`/article/${recentPost.slug}`) as Href}
+                asChild
+              >
+                <Pressable style={styles.recentPostItem}>
+                  {recentPost.feature_image && (
+                    <Image
+                      source={{ uri: recentPost.feature_image }}
+                      style={styles.recentPostImage}
+                      contentFit="cover"
+                    />
+                  )}
+                  <View style={styles.recentPostContent}>
+                    <ThemedText
+                      style={styles.recentPostTitle}
+                      numberOfLines={2}
+                    >
+                      {recentPost.title}
+                    </ThemedText>
+                    <ThemedText style={styles.recentPostDate}>
+                      {new Date(recentPost.published_at).toLocaleDateString(
+                        'sq-AL',
+                        {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        }
+                      )}
+                    </ThemedText>
+                  </View>
+                </Pressable>
+              </Link>
+            ))}
+          </ThemedView>
+        )}
       </ThemedView>
     </ScrollView>
   );
@@ -105,8 +173,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-  title: {
+  featuredImage: {
+    height: 220,
+    borderRadius: 12,
     marginBottom: 16,
+    backgroundColor: '#e0e0e0',
+  },
+  title: {
+    marginBottom: 12,
+  },
+  publishedDate: {
+    fontSize: 14,
+    opacity: 0.6,
+    marginBottom: 24,
   },
   htmlBase: {
     fontSize: 16,
@@ -120,5 +199,42 @@ const styles = StyleSheet.create({
   },
   errorText: {
     textAlign: 'center',
+  },
+  readMoreSection: {
+    marginTop: 48,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(128,128,128,0.15)',
+  },
+  readMoreTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+  recentPostItem: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 12,
+    paddingVertical: 8,
+  },
+  recentPostImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#e0e0e0',
+  },
+  recentPostContent: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 6,
+  },
+  recentPostTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  recentPostDate: {
+    fontSize: 12,
+    opacity: 0.6,
   },
 });

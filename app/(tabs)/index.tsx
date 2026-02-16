@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 
 import { FeedArticleCard } from '@/components/feed-article-card';
-import { TagStrip } from '@/components/tag-strip';
+import { TagMenu } from '@/components/tag-menu';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { fetchPosts } from '@/lib/ghost-api';
@@ -60,7 +60,7 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <TagStrip selectedTag={selectedTag} onSelectTag={setSelectedTag} />
+      <TagMenu selectedTag={selectedTag} onSelectTag={setSelectedTag} />
       {loading && !refreshing ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" />
@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   centered: {
     flex: 1,

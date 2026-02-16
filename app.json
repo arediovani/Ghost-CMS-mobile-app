@@ -20,7 +20,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.mat.televizin.al"
+      "googleServicesFile": "./google-services.json",
+      "package": "com.mat.televizion.al"
     },
     "web": {
       "output": "static",
